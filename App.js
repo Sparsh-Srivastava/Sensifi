@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, Text, View, Image, Dimensions } from "react-native";
 import { Camera, CameraType, FlashMode } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
 import Button from "./src/components/Button";
+import MapView from "react-native-maps";
 
 export default function App() {
   const [hasCameraPermissions, setHasCameraPermissions] = useState(null);
@@ -11,6 +12,16 @@ export default function App() {
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
   const cameraRef = useRef(null);
+  const { width, height } = Dimensions.get("window");
+  const ASP = width / height;
+  const LATITUDE_DELTA = 0.02;
+  const LONGITUDE_DELTA = LATITUDE_DELTA * ASP;
+  const INITIAL_POSTION = {
+    latitude: 26.51,
+    longitude: 80.56,
+    latitudeDelta: LATITUDE_DELTA,
+    longitudeDelta: LONGITUDE_DELTA,
+  };
 
   useEffect(() => {
     (async () => {
@@ -102,14 +113,18 @@ export default function App() {
           />
         )}
       </View>
+      <View style={styles.map_container}>
+        <MapView style={styles.map} initialRegion={INITIAL_POSTION} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    position: "relative",
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
     alignItems: "center",
     justifyContent: "center",
     paddingBottom: 20,
@@ -117,6 +132,19 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
     borderRadius: 20,
-    width: 500,
+    width: "100%",
+    height: "100%",
+  },
+  map: {
+    position: "relative",
+    width: Dimensions.get("window").width * 0.4,
+    height: 200,
+    top: 0,
+  },
+  map_container: {
+    position: "absolute",
+    right: 0,
+    bottom: "10%",
+    paddingHorizontal: 15,
   },
 });
