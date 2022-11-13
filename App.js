@@ -5,12 +5,14 @@ import { Camera, CameraType, FlashMode } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
 import Button from "./src/components/Button";
 import MapView from "react-native-maps";
+import axios from "axios";
 
 export default function App() {
   const [hasCameraPermissions, setHasCameraPermissions] = useState(null);
   const [image, setImage] = useState(null);
   const [type, setType] = useState(Camera.Constants.Type.back);
   const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
+  const [answer, setAnswer] = useState("");
   const cameraRef = useRef(null);
   const { width, height } = Dimensions.get("window");
   const ASP = width / height;
@@ -43,9 +45,64 @@ export default function App() {
     }
   };
 
+  const saveImage = async () => {
+    if (image) {
+      try {
+        await MediaLibrary.createAssetAsync(image);
+        alert("Image Saved");
+        setImage(null);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
+
   if (hasCameraPermissions === false) {
     return <Text>No access to the camera</Text>;
   }
+
+  async function predict(query) {
+    var myParams = {
+      data: query,
+    };
+
+    if (query != "") {
+      await axios
+        .post("https://10.0.2.2:7000/predict", myParams)
+        .then(function (response) {
+          console.log("SENT");
+          console.log(response);
+          setAnswer(response.data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    } else {
+      console.log("The search query cannot be empty");
+    }
+  }
+
+  const sendData = async (e) => {
+    e.preventDefault();
+
+    const config = {
+      header: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    try {
+      const { data } = await axios.post(
+        "http://127.0.0.1:5000/predict",
+        {
+          data: image,
+        },
+        config
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -104,13 +161,21 @@ export default function App() {
               icon="retweet"
               onPress={() => setImage(null)}
             />
+            <Button title={"Save"} icon="check" onPress={saveImage} />
+            <Button
+              title={"Start Predicting"}
+              icon="camera"
+              onPress={() => setImage(image)}
+            />
           </View>
         ) : (
-          <Button
-            title={"Take a Picture"}
-            icon="camera"
-            onPress={takePicture}
-          />
+          <View>
+            <Button
+              title={"Take a Picture"}
+              icon="camera"
+              onPress={takePicture}
+            />
+          </View>
         )}
       </View>
       <View style={styles.map_container}>
